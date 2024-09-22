@@ -20,7 +20,7 @@ end)
 
 plugin:addHook("PacketBuilding", function(connection)
     for _,ply in ipairs(allPlayers) do
-        if connection.player.team == 3 and ply.team == 3 then
+        if connection.player.data.showCrim and ply.data.showCrim then
             ply.criminalRating = 100
         elseif ply.team == 0 then
             ply.criminalRating = 10
@@ -380,6 +380,7 @@ function Game()
             ---@type Player
             local ply = allPlayers[i]
             if i == 1 then
+                ply.data.showCrim = false
                 ply.team = 0
                 ply:update()
 
@@ -390,11 +391,13 @@ function Game()
                 ply.human:mountItem(scanner,6)
                 scans = 2
             elseif i <= math.ceil(#allPlayers/5) + 1 and i ~= 1 then
+                ply.data.showCrim = true
                 ply.team = 3
                 ply:update()
                 messagePlayerWrap(ply,"You are a Traitor!")
                 totalTraitors = totalTraitors + 1
             else
+                ply.data.showCrim = false
                 ply.team = 2
                 messagePlayerWrap(ply,"You are Innocent!")
                 ply:update()
