@@ -23,10 +23,10 @@ end)
 plugin:addHook("BulletHitHuman",function (human, bullet)
     if human.isAlive and human.player then
         human.data.deathInfo = {}
-        human.data.deathInfo.refreshRate = 1
+        human.data.deathInfo.refreshRate = 3
         human.data.deathInfo.hitBy = bullet.player.human
         human.data.deathInfo.playerName = human.player.name
-        human.data.deathInfo.hitDistance = bullet.player.human.pos:dist(human.pos)
+        human.data.deathInfo.hitDistance = math.ceil(bullet.player.human.pos:dist(human.pos)*10)/10
 
         human.data.deathInfo.headHP = human.headHP
         human.data.deathInfo.chestHP = human.chestHP
@@ -60,6 +60,43 @@ plugin:addHook("BulletHitHuman",function (human, bullet)
             human.data.deathInfo.teamName = "Traitor"
         else
             human.data.deathInfo.teamName = "Unassigned"
+        end
+    end
+end)
+
+plugin:addHook("PacketBuilding",function (connection)
+    for _,ply in ipairs(allPlayers) do
+        if ply.team == 3 then --Is the player a Traitor
+            if connection.player.team == 3 then --Is the current connection a Traitor
+                ply.criminalRating = 100
+            elseif ply.team ~= 0 then
+                ply.criminalRating = 0
+            end
+        elseif ply.team ~= 0 then
+            ply.criminalRating = 0
+        end
+    end
+end)
+
+plugin:addHook("PostBulletCreate",function (bullet)
+    if grace then
+        bullet.time = 0
+        bullet.vel = Vector(0,0,0)
+    end
+end)
+
+plugin:addHook("HumanLimbInverseKinematics",function (hum,A,B,pos)
+    if scanner then
+        if hum:getInventorySlot(0).primaryItem == scanner then
+            if A == enum.body.torso and B == enum.body.shoulder_right then
+                pos:set(Vector(-.2,0,-.6))
+            end
+        end
+
+        if hum:getInventorySlot(1).primaryItem == scanner then
+            if A == enum.body.torso and B == enum.body.shoulder_left then
+                pos:set(Vector(.2,0,-.6))
+            end
         end
     end
 end)
@@ -167,15 +204,33 @@ function Game()
     end
 
     for _,human in ipairs(humans.getAll()) do
-        if human.data.permanent and not human.player then
+        if not human.data.permanent and not human.player then
             human.despawnTime = 60*60*roundTime*1.5
             human.data.permanent = true
         end
 
         if human.data.deathInfo then
-            human.data.deathInfo.refreshRate = human.data.deathInfo.refreshRate - 1/tickRate
-            if human.data.deathInfo.refreshRate <= 0 then
-                human.data.deathInfo.hitBy = nil
+            if human.data.deathInfo.hitBy then
+                human.data.deathInfo.refreshRate = human.data.deathInfo.refreshRate - 1/tickRate
+                if human.data.deathInfo.refreshRate <= 0 then
+                    human.data.deathInfo = nil
+                end
+            end
+        end
+
+        if not human.data.deathInfo then
+            human.data.deathInfo = {}
+            human.data.deathInfo.playerName = human.player.name
+            human.data.deathInfo.refreshRate = 3
+
+            if human.player.team == 0 then
+                human.data.deathInfo.teamName = "Detective"
+            elseif human.player.team == 2 then
+                human.data.deathInfo.teamName = "Innocent"
+            elseif human.player.team == 3 then
+                human.data.deathInfo.teamName = "Traitor"
+            else
+                human.data.deathInfo.teamName = "Unassigned"
             end
         end
     end
@@ -188,6 +243,8 @@ function Game()
 
     if grace then
         AssignTeams()
+    else
+        Scanner()
     end
 
     DeathInformation()
@@ -251,6 +308,7 @@ function AssignTeams()
             if i == 1 then
                 ply.team = 0
                 ply:update()
+                ply.criminalRating = 1
 
                 messagePlayerWrap(ply,"You are the Detective!")
 
@@ -261,7 +319,6 @@ function AssignTeams()
 
             elseif i <= math.ceil(#allPlayers/5) + 1 then
 
-                ply.data.showCrim = true
                 ply.team = 3
                 ply:update()
                 messagePlayerWrap(ply,"You are a Traitor!")
@@ -269,7 +326,6 @@ function AssignTeams()
 
             else
 
-                ply.data.showCrim = false
                 ply.team = 2
                 messagePlayerWrap(ply,"You are Innocent!")
                 ply:update()
@@ -292,6 +348,46 @@ function AssignTeams()
     end
 end
 
+function Scanner()
+    if scanner.parentHuman then
+        if not scanner.parentHuman.data.alertScanner and scanner.parentSlot == 0 or scanner.parentSlot == 1 then
+            messagePlayerWrap(scanner.parentHuman.player,"Equipped Scanner")
+            messagePlayerWrap(scanner.parentHuman.player,"LMB to Use")
+            scanner.parentHuman.data.alertScanner = true
+        end
+
+        if KeyPressed(scanner.parentHuman,enum.input.lmb) and not KeyPressed(scanner.parentHuman,enum.input.shift) and scanner.parentSlot == 0 and scanner.parentHuman.player.team ~= 3 then
+
+            if not  scanning then
+                if scans > 0 then
+                    ---@param hum Human
+                    for _,hum in ipairs(allHumans) do
+                        if hum.pos:dist(scanner.pos) <= 2 and hum ~= scanner.parentHuman and hum.isAlive then
+                            local hit = physics.lineIntersectHuman(hum,scanner.pos,scanner.rot:forwardUnit()*.5,0)
+                            if hit then
+                                if hum.player.team == 3 then
+                                    messagePlayerWrap(scanner.parentHuman.player,string.format("%s is a Traitor!",hum.player.name))
+                                    events.createSound(enum.sound.phone.buttons[1],scanner.pos,1,.5)
+                                else
+                                    messagePlayerWrap(scanner.parentHuman.player,string.format("%s is Innocent!",hum.player.name))
+                                    events.createSound(enum.sound.phone.buttons[1],scanner.pos,9,.9)
+                                end
+
+                                scans = scans - 1
+                            end
+                        end
+                    end
+                else
+                    messagePlayerWrap(scanner.parentHuman.player,"No Scans Left")
+                end
+                scanning = true
+            end
+        else
+            scanning = false
+        end
+    end
+end
+
 function DeathInformation()
     local bodyState = [[
 
@@ -299,43 +395,54 @@ function DeathInformation()
     Role: %s
     Blood Level: %s
     Murder Weapon: %s
-    Bullet Travel Distance: %s m
+    Bullet Travel Distance: %s
+
+    Head HP: %s
+
+    Chest HP: %s
+
+    Left Arm HP: %s
+    Right Arm HP: %s
+
+    Left Leg HP: %s
+    Right Leg HP: %s
+
+
+
+
+
+
+
     High Blood Level / HP may be a sign of a quick death
-                                    _________
-                                    |       |
-                                    |  %s  |
-                                    |       |
-                                    _________
-                                      |   |
-                                 __ _________ __
-                                |  ||       ||  |
-                                |  ||       ||  |
-                                |  ||       ||  |
-                                |  ||       ||  |
-                                |  ||  %s  ||  | L %s / R %s
-                                |  ||       ||  |
-                                |  ||       ||  |
-                                |__|_________|__|
-                                    |  | |  |
-                                    |  | |  | L %s / R %s]]
+    ]]
 
     for _,human in ipairs(allHumans) do
         if not human.isAlive then
+            
             if not human.data.deathTicket then
-                human.data.deathTicket = items.create(itemTypes[enum.item.memo],Vector(),human:getRigidBody(enum.body.torso).rot)
+                local x,y,z = rotMatrixToEulerAngles(human:getRigidBody(enum.body.torso).rot)
+                human.data.deathTicket = items.create(itemTypes[enum.item.memo],Vector(),yawToRotMatrix(y))
 
-                if human.data.deathInfo.headHP < 100 then
-                    human.data.deathInfo.headHP = " "..human.data.deathInfo.headHP
-                elseif human.data.deathInfo.headHP < 10 then
-                    human.data.deathInfo.headHP = " "..human.data.deathInfo.headHP.." "
+                if human.data.deathInfo.hitBy then
+                    if human.data.deathInfo.headHP < 100 then
+                        human.data.deathInfo.headHP = " "..human.data.deathInfo.headHP
+                    elseif human.data.deathInfo.headHP < 10 then
+                        human.data.deathInfo.headHP = " "..human.data.deathInfo.headHP.." "
+                    end
+
+                    if human.data.deathInfo.chestHP < 100 then
+                        human.data.deathInfo.chestHP = " "..human.data.deathInfo.chestHP
+                    elseif human.data.deathInfo.chestHP < 10 then
+                        human.data.deathInfo.chestHP = " "..human.data.deathInfo.chestHP.." "
+                    end
                 end
 
-                if not human.data.deathInfo then
-                    human.data.deathTicket.memoText = string.format(bodyState,human.data.deathInfo.playerName,human.data.deathInfo.teamName,"","Fell/Pushed","")
+                if not human.data.deathInfo.weaponUsed then
+                    human.data.deathTicket.memoText = string.format(bodyState,human.data.deathInfo.playerName,human.data.deathInfo.teamName,"","Fell/Pushed","","","","","","","")
                 elseif human.data.deathInfo.hitBy == human then
-                    human.data.deathTicket.memoText = string.format(bodyState,human.data.deathInfo.playerName,human.data.deathInfo.teamName,"","Suicide","")
+                    human.data.deathTicket.memoText = string.format(bodyState,human.data.deathInfo.playerName,human.data.deathInfo.teamName,"","Suicide","","","","","","","")
                 elseif human.data.deathInfo.chestHP then
-                    human.data.deathTicket.memoText = string.format(bodyState,human.data.deathInfo.playerName,human.data.deathInfo.teamName,human.data.deathInfo.bloodLevel,human.data.deathInfo.weaponUsed,human.data.deathInfo.hitDistance)
+                    human.data.deathTicket.memoText = string.format(bodyState,human.data.deathInfo.playerName,human.data.deathInfo.teamName,human.data.deathInfo.bloodLevel,human.data.deathInfo.weaponUsed,human.data.deathInfo.hitDistance.." m",human.data.deathInfo.headHP,human.data.deathInfo.chestHP,human.data.deathInfo.leftArmHP,human.data.deathInfo.rightArmHP,human.data.deathInfo.leftLegHP,human.data.deathInfo.rightLegHP)
                 end
                 
                 human.data.deathTicket.isStatic = true
