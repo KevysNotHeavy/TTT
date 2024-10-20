@@ -45,7 +45,7 @@ plugin:addHook("ReleaseGrab",function (human)
 end)
 
 plugin:addHook("HumanLimbInverseKinematics",function (human,A,B,pos,a,b,c,d,strength)
-    local str = .8
+    local str = .7
     if human.data.grabbingLeft or human.data.grabbingRight then
 
         if A == enum.body.pelvis and B == enum.body.foot_left or B == enum.body.foot_right then

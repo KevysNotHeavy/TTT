@@ -25,11 +25,23 @@ end
 
 plugin:addHook("Logic",function ()
     for _,human in ipairs(humans.getAll()) do
-        if KeyPressed(human,enum.input.ctrl) and human.zoomLevel == 0 and human.isStanding and human.data.recoveryTime <= 0 then
-			memory.writeFloat(memory.getAddress(human)+0x118,2)
-            human.data.isRunning = true
-		else
-            human.data.isRunning = nil
+        if KeyPressed(human,enum.input.shift) and KeyPressed(human,enum.input.ctrl) and math.ceil(human.walkInput) == 1 then
+            if not human.data.toggleRun then
+                if human.data.isRunning then
+                    human.data.isRunning = false
+                    messagePlayerWrap(human.player,"Running (Off)")
+                else
+                    human.data.isRunning = true
+                    messagePlayerWrap(human.player,"Running (On)")
+                end
+                human.data.toggleRun = true
+            end
+        else
+            human.data.toggleRun = false
+        end
+
+        if human.data.isRunning and human.zoomLevel == 0 and human.data.recoveryTime <= 0 then
+            memory.writeFloat(memory.getAddress(human)+0x118,2)
         end
 
         if not human.isStanding then

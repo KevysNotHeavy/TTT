@@ -64,18 +64,13 @@ plugin:addHook("BulletHitHuman",function (human, bullet)
     end
 end)
 
+
+local currBuildingConnection = nil
 plugin:addHook("PacketBuilding",function (connection)
-    for _,ply in ipairs(allPlayers) do
-        if ply.team == 3 then --Is the player a Traitor
-            if connection.player.team == 3 then --Is the current connection a Traitor
-                ply.criminalRating = 100
-            elseif ply.team ~= 0 then
-                ply.criminalRating = 0
-            end
-        elseif ply.team ~= 0 then
-            ply.criminalRating = 0
-        end
+    if connection == currBuildingConnection then
+        return
     end
+    currBuildingConnection = connection
 end)
 
 plugin:addHook("PostBulletCreate",function (bullet)
@@ -87,19 +82,29 @@ end)
 
 plugin:addHook("HumanLimbInverseKinematics",function (hum,A,B,pos)
     if scanner then
-        if hum:getInventorySlot(0).primaryItem == scanner then
+        if hum:getInventorySlot(0).primaryItem == scanner and hum.throwPitch == 0 then
             if A == enum.body.torso and B == enum.body.shoulder_right then
                 pos:set(Vector(-.2,0,-.6))
             end
         end
 
-        if hum:getInventorySlot(1).primaryItem == scanner then
+        if hum:getInventorySlot(1).primaryItem == scanner and hum.throwPitch == 0 then
             if A == enum.body.torso and B == enum.body.shoulder_left then
                 pos:set(Vector(.2,0,-.6))
             end
         end
     end
 end)
+
+---@param hum Human
+---@param key number
+function KeyPressed(hum,key)
+    if bit32.band(hum.inputFlags,key) == key and bit32.band(hum.lastInputFlags,key) == key then
+        return true
+    else
+        return false
+    end
+end
 
 function Init()
     queueReset = false
@@ -111,9 +116,13 @@ function Init()
     grace = true
     roundTime = 10 --Minutes
 
-    totalTraitors = 0 --For counting at start of match
-
     endGame = false
+    initGame = false
+    allTraitors = {}
+
+    for _,ply in ipairs(players.getAll()) do
+        ply.criminalRating = 0
+    end
 end
 
 function Tick()
@@ -233,6 +242,35 @@ function Game()
                 human.data.deathInfo.teamName = "Unassigned"
             end
         end
+
+        if KeyPressed(human,enum.input.f) then
+            if not human.data.checkedStat then
+                if human.player.team == 0 then
+                    messagePlayerWrap(human.player,"You are the Detective")
+                elseif human.player.team == 2 then
+                    messagePlayerWrap(human.player,"You are Innocent")
+                elseif human.player.team == 3 then
+                    messagePlayerWrap(human.player,"You are a Traitor")
+                    local otherTs = ""
+
+                    for i=1,#allTraitors do
+                        local ply = allTraitors[i]
+                        if i == 1 then
+                            otherTs = otherTs..ply.name
+                        else
+                            otherTs = otherTs..", "..ply.name
+                        end
+                    end
+
+                    messagePlayerWrap(human.player,"Other Traitors:"..otherTs)
+                else
+                    messagePlayerWrap(human.player,"You are Unassigned (Grace Period)")
+                end
+                human.data.checkedStat = true
+            end
+        else
+            human.data.checkedStat = false
+        end
     end
 
     if not initGame then
@@ -245,10 +283,27 @@ function Game()
         AssignTeams()
     else
         Scanner()
+        PlayersAlive()
     end
 
     DeathInformation()
 
+    Bounds()
+end
+
+function Bounds()
+    if currMap.bounds then
+        for _,ply in ipairs(allPlayers) do
+            if ply.human and not isVectorInCuboid(ply.human.pos,currMap.bounds[1],currMap.bounds[2]) then
+                if server.ticksSinceReset % 20 == 0 then
+                    ply.human.chestHP = ply.human.chestHP - 2
+                end
+                if server.ticksSinceReset % 40 == 0 then
+                    messagePlayerWrap(ply,"You are out of bounds!")
+                end
+            end
+        end
+    end
 end
 
 function SpawnPlayers()
@@ -271,7 +326,7 @@ function SpawnWeapons()
         currMap.weaponSpawns = table.shuffle(currMap.weaponSpawns)
     end
 
-    for i=1,#allPlayers*3 do
+    for i=1,math.clamp(#allPlayers*3,20,999) do
         local weapon = math.random(1,100)
         if weapon <= 20 then
             weapon = "M-16" ---@diagnostic disable-line: cast-local-type
@@ -289,7 +344,7 @@ function SpawnWeapons()
         local itm = items.create(itemTypes.getByName(weapon),currMap.weaponSpawns[i],yawToRotMatrix(math.random(0,180)))
         itm.despawnTime = roundTime*1.5*60*60
 
-        for j=1,2 do
+        for j=1,3 do
             local itm = items.create(itemTypes.getByName(weapon.." Magazine"),currMap.weaponSpawns[i],yawToRotMatrix(math.random(0,180)))
             itm.despawnTime = roundTime*1.5*60*60
         end
@@ -315,6 +370,7 @@ function AssignTeams()
                 scanner = items.create(itemTypes[enum.item.disk_gold],ply.human.pos,orientations.n)
                 assert(scanner)
                 ply.human:mountItem(scanner,6)
+                scanner.despawnTime = roundTime*60*60*1.5
                 scans = 2
 
             elseif i <= math.ceil(#allPlayers/5) + 1 then
@@ -322,7 +378,7 @@ function AssignTeams()
                 ply.team = 3
                 ply:update()
                 messagePlayerWrap(ply,"You are a Traitor!")
-                totalTraitors = totalTraitors + 1
+                table.insert(allTraitors,ply)
 
             else
 
@@ -333,10 +389,10 @@ function AssignTeams()
             end
         end
 
-        if totalTraitors == 1 then
+        if #allTraitors == 1 then
             events.createMessage(3,"There is 1 Traitor!",-1,2)
         else
-            events.createMessage(3,string.format("There are %s Traitors!",totalTraitors),-1,2)
+            events.createMessage(3,string.format("There are %s Traitors!",#allTraitors),-1,2)
         end
 
         for _,hum in ipairs(allHumans) do
@@ -349,41 +405,106 @@ function AssignTeams()
 end
 
 function Scanner()
-    if scanner.parentHuman then
-        if not scanner.parentHuman.data.alertScanner and scanner.parentSlot == 0 or scanner.parentSlot == 1 then
-            messagePlayerWrap(scanner.parentHuman.player,"Equipped Scanner")
-            messagePlayerWrap(scanner.parentHuman.player,"LMB to Use")
-            scanner.parentHuman.data.alertScanner = true
-        end
-
-        if KeyPressed(scanner.parentHuman,enum.input.lmb) and not KeyPressed(scanner.parentHuman,enum.input.shift) and scanner.parentSlot == 0 and scanner.parentHuman.player.team ~= 3 then
-
-            if not  scanning then
-                if scans > 0 then
-                    ---@param hum Human
-                    for _,hum in ipairs(allHumans) do
-                        if hum.pos:dist(scanner.pos) <= 2 and hum ~= scanner.parentHuman and hum.isAlive then
-                            local hit = physics.lineIntersectHuman(hum,scanner.pos,scanner.rot:forwardUnit()*.5,0)
-                            if hit then
-                                if hum.player.team == 3 then
-                                    messagePlayerWrap(scanner.parentHuman.player,string.format("%s is a Traitor!",hum.player.name))
-                                    events.createSound(enum.sound.phone.buttons[1],scanner.pos,1,.5)
-                                else
-                                    messagePlayerWrap(scanner.parentHuman.player,string.format("%s is Innocent!",hum.player.name))
-                                    events.createSound(enum.sound.phone.buttons[1],scanner.pos,9,.9)
+    if scanner then
+        if scanner.parentHuman then
+            if not scanner.parentHuman.data.alertScanner and (scanner.parentSlot == 0 or scanner.parentSlot == 1) then
+                messagePlayerWrap(scanner.parentHuman.player,"Equipped Scanner")
+                messagePlayerWrap(scanner.parentHuman.player,"LMB to Use")
+                scanner.parentHuman.data.alertScanner = true
+            end
+        
+            allowedScan = ( (KeyPressed(scanner.parentHuman,enum.input.lmb) and not KeyPressed(scanner.parentHuman,enum.input.shift) and scanner.parentSlot == 0) or (KeyPressed(scanner.parentHuman,enum.input.lmb) and KeyPressed(scanner.parentHuman,enum.input.shift) and scanner.parentSlot == 1) )
+        
+            if allowedScan then
+                if not  scanning then
+                    if scans > 0 then
+                        ---@param hum Human
+                        for _,hum in ipairs(allHumans) do
+                            if hum.pos:dist(scanner.pos) <= 2 and hum ~= scanner.parentHuman and hum.isAlive then
+                                local hit = physics.lineIntersectHuman(hum,scanner.pos,scanner.rot:forwardUnit()*.5,0)
+                                if hit then
+                                    if hum.player.team == 3 then
+                                        messagePlayerWrap(scanner.parentHuman.player,string.format("%s is a Traitor!",hum.player.name))
+                                        events.createSound(enum.sound.phone.buttons[1],scanner.pos,1,.5)
+                                    else
+                                        messagePlayerWrap(scanner.parentHuman.player,string.format("%s is Innocent!",hum.player.name))
+                                        events.createSound(enum.sound.phone.buttons[1],scanner.pos,9,.9)
+                                    end
+                                    scans = scans - 1
                                 end
-
-                                scans = scans - 1
                             end
                         end
+                    else
+                        messagePlayerWrap(scanner.parentHuman.player,"No Scans Left")
                     end
-                else
-                    messagePlayerWrap(scanner.parentHuman.player,"No Scans Left")
+                    scanning = true
                 end
-                scanning = true
+            else
+                scanning = false
             end
-        else
-            scanning = false
+        end
+    end
+end
+
+function PlayersAlive()
+    local civsAlive,tsAlive = false,false
+    for _,ply in ipairs(allPlayers) do
+        if ply.human then
+            if ply.human.isAlive then
+                if ply.team == 0 or ply.team == 2 then
+                    civsAlive = true
+                    break
+                end
+            end
+        end
+    end
+
+    for _,ply in ipairs(allPlayers) do
+        if ply.human then
+            if ply.human.isAlive then
+                if ply.team == 3 then
+                    tsAlive = true
+                    break
+                end
+            end
+        end
+    end
+
+    if not endGame then
+        if not tsAlive then
+            events.createMessage(3,"Civillians Win!",-1,2)
+            endGame = true
+
+            for _,hum in ipairs(allHumans) do
+                events.createSound(enum.sound.misc.whistle,hum.pos,.8,.9)
+            end
+
+        elseif not civsAlive then
+            events.createMessage(3,"Terrorists Win!",-1,2)
+            endGame = true
+
+            for _,hum in ipairs(allHumans) do
+                events.createSound(enum.sound.vehicle.train[1],hum.pos,1,1)
+            end
+        end
+
+        if server.time == 1*60 then
+            endGame = true
+            events.createMessage(3,"Stalemate! Restarting...",-1,2)
+    
+            for _,hum in ipairs(allHumans) do
+                events.createSound(enum.sound.computer.disk_drive,hum.pos,1,1)
+            end
+        end
+
+        resetTime = 10
+    end
+
+    if endGame then
+        server.time = 11*60 + 11*60*60
+        resetTime = resetTime - 1/62.5
+        if resetTime <= 0 then
+            server:reset()
         end
     end
 end
@@ -413,6 +534,12 @@ function DeathInformation()
 
 
 
+
+
+
+
+
+
     High Blood Level / HP may be a sign of a quick death
     ]]
 
@@ -421,7 +548,7 @@ function DeathInformation()
             
             if not human.data.deathTicket then
                 local x,y,z = rotMatrixToEulerAngles(human:getRigidBody(enum.body.torso).rot)
-                human.data.deathTicket = items.create(itemTypes[enum.item.memo],Vector(),yawToRotMatrix(y))
+                human.data.deathTicket = items.create(itemTypes[enum.item.memo],Vector(),yawToRotMatrix(y+180))
 
                 if human.data.deathInfo.hitBy then
                     if human.data.deathInfo.headHP < 100 then
@@ -457,3 +584,75 @@ function DeathInformation()
         end
     end
 end
+
+plugin.commands['/showt'] = {
+    info = "Spawn in game for testing",
+    canCall = function (ply)
+        return ply.isAdmin
+    end,
+    call = function (ply, hum, args)
+        if not ply.data.showTraitors then
+            ply.data.showTraitors = true
+            messagePlayerWrap(ply,"Showing Traitors")
+        else
+            ply.data.showTraitors = false
+            messagePlayerWrap(ply,"Hiding Traitors")
+        end
+    end
+}
+
+plugin.commands['/spawn'] = {
+    info = "Spawn in game for testing",
+    canCall = function (ply)
+        return ply.isAdmin
+    end,
+    call = function (ply, hum, args)
+        if not hum then
+            if not args[1] then
+                humans.create(ply.connection.cameraPos,orientations.n,ply)
+            else
+                ---@diagnostic disable-next-line: param-type-mismatch
+                humans.create(Vector(tonumber(args[1]),tonumber(args[2]),tonumber(args[3])),orientations.n,ply)
+            end
+        end
+    end
+}
+
+plugin.commands['/unspawn'] = {
+    info = "Spawn in game for testing",
+    canCall = function (ply)
+        return ply.isAdmin
+    end,
+    call = function (ply, hum, args)
+        if hum then
+            hum:remove()
+        end
+    end
+}
+
+plugin.commands["/info"] = {
+    alias = {"/about","/serverinfo","/howtoplay"},
+    info = "Get basic info about TTT",
+    call = function (ply,hum,args)
+
+        if #args == 0 then
+            messagePlayerWrap(ply,"Usage: /info [traitor, detective, civ, controls]")
+        elseif args[1] == "detective" then
+            messagePlayerWrap(ply,"Detective")
+            messagePlayerWrap(ply,"Click on a player to scan them and figure out their role (w/ disk)")
+            messagePlayerWrap(ply,"Eliminate the Traitors to Win")
+        elseif args[1] == "civ" then
+            messagePlayerWrap(ply,"Civillians/Innocent")
+            messagePlayerWrap(ply,"Keep the detective safe, they can scan suspicious players")
+            messagePlayerWrap(ply,"Eliminate the Traitors to Win")
+        elseif args[1] == "traitor" then
+            messagePlayerWrap(ply,"Traitor")
+            messagePlayerWrap(ply,"Keep fellow traitors safe")
+            messagePlayerWrap(ply,"Don't let the detective scan you")
+            messagePlayerWrap(ply,"Eliminate the Detective and Innocents to Win")
+        elseif args[1] == "controls" then
+            messagePlayerWrap(ply,"Ctrl + Shift + W (While in Run) = Sprint")
+            messagePlayerWrap(ply,"F - Check Role")
+        end
+    end
+}
