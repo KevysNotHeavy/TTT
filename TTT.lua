@@ -154,8 +154,6 @@ function Tick()
     if queueReset and #allPlayers == 0 then
         server:reset()
     end
-
-    MapData()
 end
 
 function MapData() --add the ventian (wooden building small and cool)
@@ -164,11 +162,24 @@ function MapData() --add the ventian (wooden building small and cool)
             name = "ttt_apartments",
             spawns = {Vector(1666.57,53.08,1624.56), Vector(1678.61,53.09,1613.4), Vector(1670.7,53.08,1607.3), Vector(1671.4,49.08,1597.46), Vector(1671.77,49.08,1607.51), Vector(1685.19,47.78,1623.37), Vector(1703.9,49.08,1619.65), Vector(1705.07,53.08,1587.15), Vector(1708.69,53.07,1615.34), Vector(1705.78,53.07,1623.51), Vector(1706.51,57.08,1594.72), Vector(1707.1,48.83,1637.32), Vector(1714.73,48.83,1647.03), Vector(1715.38,50.9,1653.89), Vector(1704.38,53.09,1662.15), Vector(1711.49,53.08,1666.84), Vector(1672.15,57.08,1660.84), Vector(1661.65,57.08,1665.03), Vector(1657.49,49.33,1639.12), Vector(1654.25,53.99,1610.4)},
             weaponSpawns = {Vector(1674.97,48.45,1670.41), Vector(1658.33,49.09,1670.56), Vector(1658.35,49.07,1656.53), Vector(1658.07,49.08,1662.62), Vector(1656.73,48.96,1653.66), Vector(1693.63,49.08,1657.23), Vector(1694.45,49.08,1669.4), Vector(1689.72,49.08,1670.25), Vector(1709.48,49.09,1657.09), Vector(1713.86,49.08,1662.84), Vector(1713.97,49.08,1657.4), Vector(1713.37,49.08,1667.78), Vector(1698.24,49.08,1670.77), Vector(1713.09,53.08,1658.04), Vector(1714.09,53.08,1662.03), Vector(1713.93,53.08,1667.33), Vector(1697.88,53.08,1670.61), Vector(1693.47,53.08,1656.91), Vector(1694.16,53.08,1669.24), Vector(1689.44,53.08,1669.9), Vector(1677.41,53.08,1670.03), Vector(1682.12,53.08,1669.79), Vector(1677.07,53.07,1657.29), Vector(1674.89,53.08,1669.27), Vector(1656.48,52.86,1667.2), Vector(1658.83,53.08,1656.66), Vector(1658.06,53.09,1662.48), Vector(1659.33,57.09,1667.37), Vector(1658.35,57.08,1657.47), Vector(1658.12,57.08,1662.32), Vector(1693.76,57.08,1657.29), Vector(1677.31,57.08,1656.92), Vector(1676.92,57.08,1669.7), Vector(1683.49,57.08,1670.26), Vector(1694.95,57.08,1670.19), Vector(1688.9,57.07,1669.61), Vector(1713.35,57.08,1657.72), Vector(1714.29,57.08,1663.37), Vector(1713.45,57.08,1667.18), Vector(1674.76,49.08,1637.2), Vector(1664.11,49.07,1633.79), Vector(1661.56,49.08,1621.69), Vector(1674.65,49.08,1617.37), Vector(1663.09,49.09,1612.61), Vector(1672.89,49.08,1609.22), Vector(1673.97,49.07,1586.71), Vector(1670.1,49.08,1601.34), Vector(1678.96,48.97,1585.28), Vector(1675.5,53.03,1598.76), Vector(1666.76,53.07,1586.7), Vector(1674.57,53.09,1614.18), Vector(1666.67,53.08,1616.01), Vector(1665.76,53.07,1607.1), Vector(1673.55,53.08,1625.88), Vector(1662.26,53.08,1629.6), Vector(1662.29,53.08,1634.07), Vector(1709.02,49.08,1617.04), Vector(1713.1,49.08,1621.82), Vector(1713.08,49.08,1618.21), Vector(1713.79,49.08,1628.21), Vector(1701.49,49.07,1606.15), Vector(1707.06,49.08,1612.99), Vector(1701.77,49.08,1587.54), Vector(1714.62,49.06,1590.26), Vector(1713.43,49.09,1601.61), Vector(1714.35,49.08,1598.27), Vector(1713.14,53.08,1602.46), Vector(1714.11,53.08,1597.4), Vector(1714.87,53.06,1590.44), Vector(1702.61,53.09,1612.11), Vector(1706.15,53.08,1607.95), Vector(1701.45,53.08,1620.03), Vector(1713.13,53.08,1616.97), Vector(1713.82,53.08,1621.49), Vector(1712.9,53.07,1628.57), Vector(1703.18,57.08,1598.2), Vector(1713.07,57.08,1597.36), Vector(1714,57.07,1603.01), Vector(1702.03,57.08,1611.7), Vector(1701.94,57.08,1605.92), Vector(1713.6,57.06,1630.23), Vector(1713.78,57.08,1618.08), Vector(1713.67,57.08,1621.91)},
-            bounds = {Vector(1780.29,24.88,1692.07), Vector(1625.55,59.47,1577.68)}
+            bounds = {Vector(1780.29,24.88,1692.07), Vector(1625.55,59.47,1577.68)},
+            boundsIntensity = 1
         },
+
+        {
+            name = "ttt_ventian",
+            spawns = {Vector(1538.68,61.08,1578.27), Vector(1537.38,61.08,1582.53), Vector(1538.97,61.08,1590.91), Vector(1543.58,61.09,1586.15), Vector(1555.34,61.08,1592.19), Vector(1564.44,61.09,1593.28), Vector(1561.51,61.08,1586.19), Vector(1554.06,61.08,1581.95), Vector(1552.87,61.08,1577.31), Vector(1566.26,61.08,1578.25), Vector(1569.09,65.08,1587.94), Vector(1555,65.08,1581.8), Vector(1563.61,65.09,1585.85), Vector(1553.55,65.09,1587.04), Vector(1543.39,65.09,1577.17), Vector(1547.83,65.08,1570.86), Vector(1542.4,65.09,1586.36), Vector(1537.7,65.09,1587.02), Vector(1537.21,62.83,1595.57), Vector(1569.45,62.9,1595.29)},
+            weaponSpawns = {Vector(1557.29,61.14,1577.68), Vector(1558.39,61.15,1581.2), Vector(1566.04,61.15,1582.25), Vector(1562.59,61.15,1582.67), Vector(1553.06,61.15,1581.89), Vector(1545.9,61.14,1578.32), Vector(1541.32,61.11,1582.56), Vector(1562.43,61.14,1586.19), Vector(1570.66,61.15,1581.89), Vector(1569.24,61.15,1578.58), Vector(1569.15,60.79,1595), Vector(1569.86,62.87,1594.4), Vector(1568.88,65.12,1588.88), Vector(1569.04,65.14,1582.67), Vector(1558.03,65.14,1581.07), Vector(1564.3,65.14,1585.94), Vector(1565.53,65.15,1591.58), Vector(1558.78,65.14,1593.36), Vector(1554.54,65.14,1586.61), Vector(1554.07,65.14,1592.15), Vector(1553.53,65.15,1582.48), Vector(1546.65,65.15,1578.79), Vector(1539.58,65.14,1576.66), Vector(1538.47,65.15,1571.09), Vector(1546.96,65.14,1570.01), Vector(1553.56,65.15,1576.7), Vector(1553.92,65.14,1571.93), Vector(1562.79,65.14,1586.05), Vector(1553.94,65.15,1587.77), Vector(1554.1,65.14,1592.86), Vector(1566.04,65.15,1578.25), Vector(1558.01,65.15,1577.42), Vector(1558.34,65.14,1571.47), Vector(1568.24,65.14,1570.4), Vector(1569.79,65.15,1581.76), Vector(1570.62,65.14,1585.77), Vector(1569.05,65.14,1588.86), Vector(1570.05,62.88,1594.42), Vector(1569.55,61.15,1585.65), Vector(1537.71,60.94,1594.56), Vector(1569.33,60.97,1594.68)},
+            barricades = {
+                {Vector(1570.01,60.99,1575.9), orientations.n},
+                {Vector(1537.97,60.99,1575.88), orientations.n}
+            },
+            bounds = {Vector(1572.35,69.6,1596.09), Vector(1536.37,59.1,1568.17)},
+            boundsIntensity = 5
+        }
     }
 
-    currMap = map[1]
+    currMap = map[math.random(1,#map)]
 end
 
 function Lobby()
@@ -274,8 +285,10 @@ function Game()
     end
 
     if not initGame then
+        MapData()
         SpawnPlayers()
         SpawnWeapons()
+        Barricades()
         initGame = true
     end
 
@@ -296,12 +309,22 @@ function Bounds()
         for _,ply in ipairs(allPlayers) do
             if ply.human and not isVectorInCuboid(ply.human.pos,currMap.bounds[1],currMap.bounds[2]) then
                 if server.ticksSinceReset % 20 == 0 then
-                    ply.human.chestHP = ply.human.chestHP - 2
+                    ply.human.chestHP = ply.human.chestHP - 2*currMap.boundsIntensity
                 end
                 if server.ticksSinceReset % 40 == 0 then
                     messagePlayerWrap(ply,"You are out of bounds!")
                 end
             end
+        end
+    end
+end
+
+function Barricades()
+    if currMap.barricades then
+        for _,barr in ipairs(currMap.barricades) do
+            local itm = items.create(itemTypes[enum.item.wall],barr[1],barr[2])
+            itm.isStatic = true
+            itm.hasPhysics = true
         end
     end
 end
@@ -315,6 +338,9 @@ function SpawnPlayers()
         ---@type Player
         local ply = allPlayers[i]
         humans.create(currMap.spawns[i],eulerAnglesToRotMatrix(0,math.random(0,180),0),ply)
+        ply.human.model = 0
+        local colors = {enum.color.shirt.black,enum.color.shirt.blue,enum.color.shirt.cyan,enum.color.shirt.green,enum.color.shirt.green_bright,enum.color.shirt.pink,enum.color.shirt.red,enum.color.shirt.white,enum.color.shirt.yellow}
+        ply.human.suitColor = colors[math.random(1,#colors)]
         ply.team = 4
     end
 
@@ -366,6 +392,7 @@ function AssignTeams()
                 ply.criminalRating = 1
 
                 messagePlayerWrap(ply,"You are the Detective!")
+                chat.announce(ply.name.." is the Detective!")
 
                 scanner = items.create(itemTypes[enum.item.disk_gold],ply.human.pos,orientations.n)
                 assert(scanner)
@@ -386,6 +413,13 @@ function AssignTeams()
                 messagePlayerWrap(ply,"You are Innocent!")
                 ply:update()
 
+            end
+
+            if ply.team == 0 then
+                ply.human.model = 1
+                ply.human.suitColor = enum.color.suit.black
+                ply.human.lastUpdatedWantedGroup = -1
+                ply:update()
             end
         end
 
