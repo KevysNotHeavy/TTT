@@ -352,7 +352,7 @@ function SpawnWeapons()
         currMap.weaponSpawns = table.shuffle(currMap.weaponSpawns)
     end
 
-    for i=1,math.clamp(#allPlayers*3,20,999) do
+    for i=1,math.clamp(#allPlayers*3,20,#currMap.weaponSpawns) do
         local weapon = math.random(1,100)
         if weapon <= 20 then
             weapon = "M-16" ---@diagnostic disable-line: cast-local-type
