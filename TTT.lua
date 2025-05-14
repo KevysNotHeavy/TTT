@@ -53,6 +53,35 @@ plugin:addHook("BulletHitHuman",function (human, bullet)
     end
 end)
 
+local currConnection = nil
+plugin:addHook("PacketBuilding",function (connection)
+    if allPlayers then
+        if connection == currConnection then
+            return
+        end
+
+        currBuildingConnection = connection
+
+        if connection.player.team == 3 then
+            for _,ply in ipairs(allPlayers) do
+                if ply.team == 3 then
+                    ply.criminalRating = 100
+                end
+            end
+        else
+            for _,ply in ipairs(allPlayers) do
+                ply.criminalRating = 0
+            end
+        end
+
+        for _,ply in ipairs(allPlayers) do
+            if ply.team == 0 then
+                ply.criminalRating = 25
+            end
+        end
+    end
+end)
+
 ---comment
 ---@param unit string
 ---@param time number
@@ -146,10 +175,14 @@ end)
             local mag = items.create(itemTypes[wep.mag],Vector(),orientations.n)
             if mag and gun then
                 gun:mountItem(mag,0)
+
+                gun.despawnTime = gracePeriod + roundTime + 60*10
+                mag.despawnTime = gracePeriod + roundTime + 60*10
             end
 
             for i=1,2 do
-                items.create(itemTypes[wep.mag],spawn,eulerAnglesToRotMatrix(math.pi/2,math.random(0,math.pi*2),math.pi/2))
+                local mag = items.create(itemTypes[wep.mag],spawn,eulerAnglesToRotMatrix(math.pi/2,math.random(0,math.pi*2),math.pi/2))
+                mag.despawnTime = gracePeriod + roundTime + 60*10
             end
         end
     end
