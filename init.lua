@@ -7,6 +7,7 @@ mode:require("plugins/noDamage")
 mode:require("plugins/grab")
 mode:require("plugins/bounds")
 mode:require("plugins/inputCheck")
+mode:require("plugins/afk")
 mode:require("TTT")
 
 mode.name = "TTT"

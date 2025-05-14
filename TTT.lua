@@ -1,10 +1,20 @@
 ---@type Plugin
 local plugin = ...
 
+-- AFK X
+-- WIN CONDITIONS X
+-- Lobby X
+-- Music and Ambience
+-- Scanner
+-- More Maps
+
+
 local maps = { --Spawns are VecCuboids--
     { --TTT_Apartments
         name = "TTT_Apartments",
-        spawns = {  { Vector(1709.65,57.08,1655.47), Vector(1662.40,57.09,1652.52) },
+        spawns = {
+                    --Far Building
+                    { Vector(1709.65,57.08,1655.47), Vector(1662.40,57.09,1652.52) },
                     { Vector(1656.54,57.09,1671.38), Vector(1675.36,57.09,1656.67) },
                     { Vector(1695.45,57.09,1656.47), Vector(1676.64,57.09,1667.32) },
                     { Vector(1683.74,57.08,1671.46), Vector(1676.38,57.04,1668.58) },
@@ -21,6 +31,32 @@ local maps = { --Spawns are VecCuboids--
                     { Vector(1683.51,49.09,1671.48), Vector(1676.39,49.09,1668.33) },
                     { Vector(1695.71,49.08,1668.29), Vector(1688.46,49.08,1671.53) },
                     { Vector(1696.62,49.08,1656.69), Vector(1715.24,49.08,1671.34) },
+                    --Left Building
+                    { Vector(1679.47,49.08,1639.54), Vector(1676.50,49.08,1589.89) },
+                    { Vector(1660.54,49.08,1584.51), Vector(1675.41,49.06,1603.36) },
+                    { Vector(1675.45,49.07,1619.34), Vector(1660.60,49.09,1604.58) },
+                    { Vector(1675.43,49.05,1639.26), Vector(1660.51,49.03,1620.84) },
+                    { Vector(1676.57,53.08,1591.08), Vector(1679.48,52.99,1639.08) },
+                    { Vector(1660.50,53.08,1639.53), Vector(1675.46,53.08,1620.52) },
+                    { Vector(1660.53,53.09,1619.57), Vector(1675.42,53.08,1604.57) },
+                    { Vector(1675.49,53.03,1603.14), Vector(1660.63,53.03,1584.79) },
+                    { Vector(1676.54,57.08,1592.25), Vector(1679.46,57.02,1639.12) },
+                    { Vector(1660.55,57.08,1639.61), Vector(1675.42,57.08,1620.57) },
+                    { Vector(1660.69,57.09,1619.54), Vector(1675.42,57.09,1604.57) },
+                    { Vector(1660.45,57.08,1584.53), Vector(1675.40,57.08,1603.38) },
+                    --Right building
+                    { Vector(1696.51,49.08,1635.60), Vector(1699.41,49.15,1590.44) },
+                    { Vector(1715.47,49.08,1584.42), Vector(1700.55,49.08,1603.41) },
+                    { Vector(1715.47,49.08,1604.43), Vector(1700.56,49.08,1615.42) },
+                    { Vector(1715.55,49.08,1616.50), Vector(1700.73,49.07,1635.38) },
+                    { Vector(1696.53,53.08,1590.96), Vector(1699.47,53.05,1635.23) },
+                    { Vector(1715.30,53.07,1616.27), Vector(1700.59,53.08,1635.31) },
+                    { Vector(1700.57,53.09,1615.54), Vector(1715.38,53.08,1604.56) },
+                    { Vector(1700.52,53.09,1603.50), Vector(1715.37,53.08,1584.61) },
+                    { Vector(1696.54,57.08,1591.68), Vector(1699.48,57.08,1635.43) },
+                    { Vector(1714.82,57.08,1616.27), Vector(1700.64,57.08,1635.11) },
+                    { Vector(1700.54,57.08,1604.57), Vector(1715.36,57.08,1615.38) },
+                    { Vector(1700.54,57.09,1584.52), Vector(1715.14,57.08,1603.28) },
                 },
         bounds = {Vector(1780.29,24.88,1692.07), Vector(1625.55,59.47,1577.68)}
     }
@@ -93,15 +129,30 @@ local function time(unit,time)
     end
 end
 
+---comment
+---@param sound number
+---@param volume number
+---@param pitch number
+local function playSoundAll(sound,volume,pitch)
+    for _,ply in ipairs(allPlayers) do
+        if ply.connection then
+            events.createSound(sound,ply.connection.cameraPos,volume,pitch)
+        end
+    end
+end
+
+--####INIT####--
 plugin:addHook("PostResetGame",function (reason)
     server.state = enum.state.ingame
     server.time = 11*60*60+11*60
 
     lobby = true
+    ended = false
 
     timeTillStart = time("s",5)
+    timeTillEnd = time("s",5)
 
-    gracePeriod = time("s",30)
+    gracePeriod = time("m",2)
     roundTime = time("m",8)
 
     initTeam = false
@@ -117,9 +168,11 @@ end)
 plugin:addHook("PhysicsRigidBodies",function ()
     if allPlayers then
         for _,ply in ipairs(allPlayers) do
-            if not ply.connection then
-                if ply.human then
-                    ply.human:setVelocity(Vector(0,0.0028,0))
+            if ply.connection then
+                if not ply.connection.cameraPos then
+                    if ply.human then
+                        ply.human:setVelocity(Vector(0,0.0028,0))
+                    end
                 end
             end
         end
@@ -148,7 +201,8 @@ end)
             hum.isImmortal = true
         end
 
-        for i=1,#allPlayers do
+        chat.announce(tostring(math.floor(math.clamp(#allPlayers*3,30,999))))
+        for i=1,math.floor(math.clamp(#allPlayers*2.5,20,999)) do
             math.randomseed(os.clock())
             local weapon = math.random(1,100)
             local weapons = {
@@ -175,14 +229,10 @@ end)
             local mag = items.create(itemTypes[wep.mag],Vector(),orientations.n)
             if mag and gun then
                 gun:mountItem(mag,0)
-
-                gun.despawnTime = gracePeriod + roundTime + 60*10
-                mag.despawnTime = gracePeriod + roundTime + 60*10
             end
 
             for i=1,2 do
-                local mag = items.create(itemTypes[wep.mag],spawn,eulerAnglesToRotMatrix(math.pi/2,math.random(0,math.pi*2),math.pi/2))
-                mag.despawnTime = gracePeriod + roundTime + 60*10
+                items.create(itemTypes[wep.mag],spawn,eulerAnglesToRotMatrix(math.pi/2,math.random(0,math.pi*2),math.pi/2))
             end
         end
     end
@@ -191,9 +241,52 @@ end)
         
     end
 
+    local currTime = 0
+
+    local function gameLogic()
+        local civs = 0
+        local ts = 0
+        for _,ply in ipairs(allPlayers) do
+            if ply.human then
+                if ply.human.isAlive then
+                    if ply.team == 0 or ply.team == 2 then
+                        civs = civs + 1
+                    elseif ply.team == 3 then
+                        ts = ts + 1
+                    end
+                end
+            end
+        end
+
+        if not ended then
+            if ts == 0 then
+                events.createMessage(3,"Innocent Win!",-1,2)
+                playSoundAll(enum.sound.weapon.shell_bounce,2,1.5)
+                ended = true
+            elseif civs == 0 then
+                events.createMessage(3,"Terrorists Win!",-1,2)
+                -- playSoundAll(enum.sound.weapon.shell_bounce,1,0.4)
+                playSoundAll(enum.sound.weapon.shell_bounce,2,1.2)
+                ended = true
+            end
+            currTime = server.ticksSinceReset
+        else
+            if currTime+timeTillEnd == server.ticksSinceReset then
+                server:reset()
+            else
+                if currTime+timeTillEnd - server.ticksSinceReset > 60 then
+                    server.time = currTime+timeTillEnd - server.ticksSinceReset
+                else
+                    server.time = 60
+                end
+            end
+        end
+    end
+
 local function tick()
     allPlayers = players.getAll()
     allHumans = humans.getAll()
+    allItems = items.getAll()
 
     if lobby then
         bounds.set(Vector(1656.21,36.61,1352.18), Vector(1807.56,86.26,1415.93))
@@ -250,6 +343,23 @@ local function tick()
             if not human.player then
                 human.despawnTime = 10
             end
+
+            if KeyPressed(human,enum.input.shift) then
+                if not human.data.checkedRole then
+                    if human.player.team == 0 then
+                        messagePlayerWrap(human.player,"Detective")
+                    elseif human.player.team == 2 then
+                        messagePlayerWrap(human.player,"Innocent")
+                    elseif human.player.team == 3 then
+                        messagePlayerWrap(human.player,"Traitor")
+                    else
+                        messagePlayerWrap(human.player,"Unassigned (Grace Period)")
+                    end
+                    human.data.checkedRole = true
+                end
+            else
+                human.data.checkedRole = false
+            end
         end
 
         for _,ply in ipairs(allPlayers) do
@@ -260,8 +370,17 @@ local function tick()
             end
         end
 
+        for _,itm in ipairs(allItems) do
+            itm.despawnTime = 10
+        end
+
         if gracePeriod <= 0 then
             if not initTeam then
+
+                ToggleAFK(true)
+
+                events.createMessage(3,"Round Starting (End of Grace Period)",-1,2)
+
                 allPlayers = table.shuffle(allPlayers)
 
                 local ttt
@@ -293,7 +412,6 @@ local function tick()
 
                 initTeam = true
             end
-            roundTime = roundTime - 1
 
             if roundTime >= 60 then
                 server.time = roundTime
@@ -301,8 +419,14 @@ local function tick()
                 server.time = 60
             end
 
-            if roundTime <= 0 then
+            if not ended then
+                roundTime = roundTime - 1
+            end
+
+            if roundTime <= 0 and not ended then
                 endRound()
+            else
+                gameLogic()
             end
         else
             gracePeriod = gracePeriod - 1
