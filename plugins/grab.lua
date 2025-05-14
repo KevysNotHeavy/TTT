@@ -217,9 +217,30 @@ end
 
 plugin:addHook("Logic",function ()
     for _,human in ipairs(humans.getAll()) do
+        if human:getRigidBody(enum.body.hand_left).data.bound then
+            if human:getRigidBody(enum.body.hand_left).data.bound.otherBody.data.human then
+                if not human:getRigidBody(enum.body.hand_left).data.bound.otherBody.data.human.isAlive then
+                    ReleaseLeft(human)
+                end
+            end
+        end
+
+        if human:getRigidBody(enum.body.hand_right).data.bound then
+            if human:getRigidBody(enum.body.hand_right).data.bound.otherBody.data.human then
+                if not human:getRigidBody(enum.body.hand_right).data.bound.otherBody.data.human.isAlive then
+                    ReleaseRight(human)
+                end
+            end
+        end
+
         if not human.data.grabInit then
             human:getRigidBody(enum.body.hand_left).data.hand = true
             human:getRigidBody(enum.body.hand_right).data.hand = true
+
+            for i=0,15 do
+                human:getRigidBody(i).data.human = human
+            end
+
             human.data.grabbingLeft = false
             human.data.grabbingRight = false
             human.data.grabInit = true
@@ -327,11 +348,13 @@ plugin:addHook("CollideBodies",function (A,B)
         hand = A
         if not B.data.hand then
             body = B
+            body.type = B.type
         end
     elseif B.data.hand then
         hand = B
         if not A.data.hand then
             body = A
+            body.type = A.type
         end
     end
 
@@ -339,9 +362,9 @@ plugin:addHook("CollideBodies",function (A,B)
         if not hand.data.bound and hand.data.grabbing then
             local offset = Vector()
             if body.type == 1 then
-                local offset = (hand.pos - body.pos) * body.rot
+                offset = (hand.pos - body.pos) * body.rot
             else
-                local offset = (hand.pos - body.pos)
+                offset = Vector()
             end
             hand.data.bound = hand:bondTo(body,Vector(),offset)
         end
