@@ -8,6 +8,21 @@ local plugin = ...
 -- Scanner
 -- More Maps
 
+-- Changes
+-- More Maps
+-- Custom Sounds
+-- T Phone Line
+-- New Bounds system
+-- Red T names
+
+
+local function playOnce(filepath)
+    local sound = Speaker.create(items[255])
+    sound:loadAudioFile(filepath)
+    sound:toggle2D()
+    sound:play()
+end
+
 
 local maps = { --Spawns are VecCuboids--
     { --TTT_Apartments
@@ -129,18 +144,6 @@ local function time(unit,time)
     end
 end
 
----comment
----@param sound number
----@param volume number
----@param pitch number
-local function playSoundAll(sound,volume,pitch)
-    for _,ply in ipairs(allPlayers) do
-        if ply.connection then
-            events.createSound(sound,ply.connection.cameraPos,volume,pitch)
-        end
-    end
-end
-
 --####INIT####--
 plugin:addHook("PostResetGame",function (reason)
     server.state = enum.state.ingame
@@ -162,16 +165,23 @@ plugin:addHook("PostResetGame",function (reason)
         ply.team = -1
         ply:update()
     end
-    
+
+    bounds.set(Vector(1656.21,36.61,1352.18), Vector(1807.56,86.26,1415.93))
 end)
 
 plugin:addHook("PhysicsRigidBodies",function ()
-    if allPlayers then
+    if allPlayers and lobby then
         for _,ply in ipairs(allPlayers) do
             if ply.connection then
-                if not ply.connection.cameraPos then
+                if not ply.data.moved then
                     if ply.human then
                         ply.human:setVelocity(Vector(0,0.0028,0))
+                    end
+                end
+
+                if ply.human then
+                    if ply.human.inputFlags ~= 0 or ply.human.strafeInput ~= 0 or ply.human.walkInput ~= 0 then
+                        ply.data.moved = true
                     end
                 end
             end
@@ -190,6 +200,7 @@ end)
 
     local function spawnPlayersAndWeapons()
         for _,hum in ipairs(allHumans) do
+            hook.run("ReleaseGrab",hum)
             hum:remove()
         end
 
@@ -259,14 +270,16 @@ end)
         end
 
         if not ended then
-            if ts == 0 then
+            if ts == 0 and civs == 0 then
+                events.createMessage(3,"HOW! (Tie)",-1,2)
+                ended = true
+            elseif ts == 0 then
                 events.createMessage(3,"Innocent Win!",-1,2)
-                playSoundAll(enum.sound.weapon.shell_bounce,2,1.5)
+                playOnce("/home/container/modes/TTT/sounds/cWin.pcm")
                 ended = true
             elseif civs == 0 then
                 events.createMessage(3,"Terrorists Win!",-1,2)
-                -- playSoundAll(enum.sound.weapon.shell_bounce,1,0.4)
-                playSoundAll(enum.sound.weapon.shell_bounce,2,1.2)
+                playOnce("/home/container/modes/TTT/sounds/tWin.pcm")
                 ended = true
             end
             currTime = server.ticksSinceReset
@@ -289,8 +302,6 @@ local function tick()
     allItems = items.getAll()
 
     if lobby then
-        bounds.set(Vector(1656.21,36.61,1352.18), Vector(1807.56,86.26,1415.93))
-
         for _,ply in ipairs(allPlayers) do
             spawnPlayer(ply)
         end
@@ -381,20 +392,29 @@ local function tick()
 
                 events.createMessage(3,"Round Starting (End of Grace Period)",-1,2)
 
-                allPlayers = table.shuffle(allPlayers)
+                local livingPlayers = {}
+                for _,ply in ipairs(allPlayers) do
+                    if ply.human then
+                        if ply.human.isAlive then
+                            table.insert(livingPlayers,ply)
+                        end
+                    end
+                end
+
+                livingPlayers = table.shuffle(livingPlayers)
 
                 local ttt
-                if #allPlayers <= 8 then
+                if #livingPlayers <= 8 then
                     ttt = 1
-                elseif #allPlayers <= 10 then
+                elseif #livingPlayers <= 10 then
                     ttt = 2
                 else
                     ttt = 3
                 end
 
-                for i=1,#players do
+                for i=1,#livingPlayers do
                     ---@type Player
-                    local ply = allPlayers[i]
+                    local ply = livingPlayers[i]
                     if i <= ttt then
                         ply.team = 3
                         messagePlayerWrap(ply,"You are a Traitor")
@@ -457,5 +477,15 @@ plugin.commands["/ready"] = {
 
             events.createMessage(3,string.format("%s is Ready! (%s/%s)",ply.name,readiedPlayers+1,maxPlayers),-1,2)
         end
+    end
+}
+
+plugin.commands["/tst"] = {
+    canCall = function (player)
+        return player.isAdmin
+    end,
+    info = "test sound",
+    call = function (player, human, args)
+        playOnce("/home/container/modes/TTT/sounds/cWin.pcm")
     end
 }

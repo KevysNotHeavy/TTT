@@ -8,6 +8,7 @@ mode:require("plugins/grab")
 mode:require("plugins/bounds")
 mode:require("plugins/inputCheck")
 mode:require("plugins/afk")
+mode:require("plugins/speaker")
 mode:require("TTT")
 
 mode.name = "TTT"
