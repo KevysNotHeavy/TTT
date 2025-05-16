@@ -6,8 +6,9 @@ path = "/home/container/"
 -- AFK X
 -- WIN CONDITIONS X
 -- Lobby X
--- Music and Ambience
+-- Music and # Ambience
 -- Scanner
+-- Death Note
 -- More Maps
 
 -- Changes
