@@ -14,6 +14,8 @@
 ---@field public hasReloadedEncoder boolean
 ---@field public class string
 ---@field public is2D boolean
+---@field public destroyItem boolean
+---@field public shot number
 Speaker = {
 	_v = "2.3_STANDALONE",
 }
@@ -34,7 +36,11 @@ Speaker.__index = Speaker
 
 ---Create a new speaker on an item.
 ---@param item Item
-function Speaker.create(item)
+function Speaker.create(item,shot)
+	if not shot then
+		shot = 7
+	end
+
 	local newSpeaker = setmetatable({
 		class = "Speaker",
 		_baseItem = item,
@@ -45,6 +51,8 @@ function Speaker.create(item)
 		hasReloadedEncoder = false,
 		status = Speaker.SPEAKER_STATUS.IDLE,
 		meta = { title = nil, author = nil, duration = nil, id = nil },
+		destroyItem = true,
+		shot = 7
 	}, Speaker)
 
 	local playerIndex = Speaker.getFreePlayerIndex()
@@ -58,7 +66,9 @@ function Speaker.create(item)
 	newSpeaker.encoder = encoder
 	newSpeaker.is2D = false
 	newSpeaker.player.data.isSpeaker = true
-	newSpeaker._baseItem.data.Speaker = newSpeaker
+	if newSpeaker._baseItem then
+		newSpeaker._baseItem.data.Speaker = newSpeaker
+	end
 
 	Speaker.speakers[playerIndex] = newSpeaker
 
@@ -106,10 +116,12 @@ function Speaker:destroy()
 
 	self.encoder:close()
 
-	if self._baseItem.class == "Item" then
-		self._baseItem:remove()
-	else
-		print("destroy tried to remove a", self._baseItem.class)
+	if self.destroyItem then
+		if self._baseItem.class == "Item" then
+			self._baseItem:remove()
+		else
+			print("destroy tried to remove a", self._baseItem.class)
+		end
 	end
 
 	Speaker.speakers[self.player.index] = nil
@@ -177,27 +189,6 @@ end
 
 function Speaker:toggle2D()
 	self.is2D = not self.is2D
-end
-
----Get the closest speaker to a player
----@private
----@param ply Player
-function Speaker.getClosestSpeaker(ply)
-	local closest = nil
-	local closestDist = math.huge
-	if not ply.human then
-		return nil
-	end
-
-	for _, speaker in pairs(Speaker.speakers) do
-		local dist = speaker._baseItem.pos:dist(ply.human.pos)
-		if speaker.status == speaker.SPEAKER_STATUS.PLAYING and dist < closestDist then
-			closest = speaker
-			closestDist = dist
-		end
-	end
-
-	return closest
 end
 
 --Save player's voice table to reload
@@ -273,26 +264,20 @@ hook.add(
 	---@param connection Connection
 	---@param ply Player
 	function(connection, ply)
-		local shot = connection:getEarShot(7)
-		local speaker = Speaker.getClosestSpeaker(ply)
-		if speaker and speaker.status == Speaker.SPEAKER_STATUS.PLAYING then
-			shot.isActive = true
-			shot.player = speaker.player
-			shot.human = nil
-			if speaker.is2D then
-				shot.receivingItem = nil
-			else
-				shot.receivingItem = speaker._baseItem
-			end
-
-			shot.distance = 1
-			shot.volume = 1
-		end
-
-		if ply.human then
-			local speaker = Speaker.speakers[1]
+		for _,speaker in pairs(Speaker.speakers) do
+			local shot = connection:getEarShot(speaker.shot)
 			if speaker and speaker.status == Speaker.SPEAKER_STATUS.PLAYING then
-				speaker._baseItem.pos = ply.human.pos
+				shot.isActive = true
+				shot.player = speaker.player
+				shot.human = nil
+				if speaker.is2D or not speaker._baseItem then
+					shot.receivingItem = nil
+				else
+					shot.receivingItem = speaker._baseItem
+				end
+
+				shot.distance = 1
+				shot.volume = 1
 			end
 		end
 	end

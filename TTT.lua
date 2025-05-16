@@ -1,6 +1,8 @@
 ---@type Plugin
 local plugin = ...
 
+path = "/home/container/"
+
 -- AFK X
 -- WIN CONDITIONS X
 -- Lobby X
@@ -16,17 +18,44 @@ local plugin = ...
 -- Red T names
 
 
-local function playOnce(filepath)
-    local sound = Speaker.create(items[255])
+local function playOnce(filepath,earshot)
+    local sound = Speaker.create(items[255],earshot)
     sound:loadAudioFile(filepath)
     sound:toggle2D()
     sound:play()
 end
 
+sLoop = false
+
+local function playLoop(filepath)
+    Ambience = Speaker.create(items[255])
+    Ambience.destroyItem = false
+    Ambience:loadAudioFile(filepath)
+    Ambience:toggle2D()
+    Ambience:play()
+    stopLoop = false
+end
+
+local function stopLoop(filepath)
+    sLoop = true
+    Ambience:destroy()
+end
+
+plugin:addHook("Logic",function ()
+    if Ambience then
+        if Ambience.errorFrames > 8 and not sLoop then
+            local tempFile = Ambience.currentPath
+            Ambience:destroy()
+            playLoop(tempFile)
+        end
+    end
+end)
+
 
 local maps = { --Spawns are VecCuboids--
     { --TTT_Apartments
         name = "TTT_Apartments",
+        ambience = path .. "/modes/TTT/sounds/apartmentAmbience.pcm",
         spawns = {
                     --Far Building
                     { Vector(1709.65,57.08,1655.47), Vector(1662.40,57.09,1652.52) },
@@ -73,7 +102,7 @@ local maps = { --Spawns are VecCuboids--
                     { Vector(1700.54,57.08,1604.57), Vector(1715.36,57.08,1615.38) },
                     { Vector(1700.54,57.09,1584.52), Vector(1715.14,57.08,1603.28) },
                 },
-        bounds = {Vector(1780.29,24.88,1692.07), Vector(1625.55,59.47,1577.68)}
+        bounds = {Vector(1780.29,24.88,1692.07), Vector(1625.55,59.47,1577.68)},
     }
 }
 
@@ -275,11 +304,11 @@ end)
                 ended = true
             elseif ts == 0 then
                 events.createMessage(3,"Innocent Win!",-1,2)
-                playOnce("/home/container/modes/TTT/sounds/cWin.pcm")
+                playOnce(path .. "modes/TTT/sounds/cWin.pcm",0)
                 ended = true
             elseif civs == 0 then
                 events.createMessage(3,"Terrorists Win!",-1,2)
-                playOnce("/home/container/modes/TTT/sounds/tWin.pcm")
+                playOnce(path .. "modes/TTT/sounds/tWin.pcm",0)
                 ended = true
             end
             currTime = server.ticksSinceReset
@@ -339,6 +368,8 @@ local function tick()
                     events.createMessage(3,"Map: "..map.name,-1,2) --Announce the Map
 
                     spawnPlayersAndWeapons()
+
+                    playLoop(map.ambience)
                 end
             else
                 server.time = timeTillStart
@@ -486,6 +517,16 @@ plugin.commands["/tst"] = {
     end,
     info = "test sound",
     call = function (player, human, args)
-        playOnce("/home/container/modes/TTT/sounds/cWin.pcm")
+        playLoop(path .. "modes/TTT/sounds/cWin.pcm")
+    end
+}
+
+plugin.commands["/end"] = {
+    canCall = function (player)
+        return player.isAdmin
+    end,
+    info = "test sound",
+    call = function (player, human, args)
+        stopLoop()
     end
 }
