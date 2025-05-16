@@ -416,10 +416,10 @@ local function tick()
                     ---@type Player
                     local ply = livingPlayers[i]
                     if i <= ttt then
-                        ply.team = 3
+                        hook.run('SelectedPlayer', ply, 3)
                         messagePlayerWrap(ply,"You are a Traitor")
                     elseif i == ttt+1 then
-                        ply.team = 0
+                        hook.run('SelectedPlayer', ply, 0)
                         messagePlayerWrap(ply,"You are a Detective")
                     else
                         messagePlayerWrap(ply,"You are Innocent")
