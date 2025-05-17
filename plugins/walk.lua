@@ -15,7 +15,9 @@ plugin:addHook("PhysicsRigidBodies",function ()
         elseif human.zoomLevel == 1 then
             castOffset = 0.1
             volume = 60
-            human.inputFlags = human.inputFlags + 8
+            if not KeyPressed(human,enum.input.ctrl) then
+                human.inputFlags = human.inputFlags + 8
+            end
         end
 
         if human.movementState == 0 then

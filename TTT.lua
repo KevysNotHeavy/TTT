@@ -14,7 +14,8 @@ path = "/home/container/"
 -- Changes
 -- More Maps
 -- Custom Sounds
--- T Phone Line
+-- Footsteps + Sneaking
+-- Traitor Phone Line
 -- New Bounds system
 -- Red T names
 
