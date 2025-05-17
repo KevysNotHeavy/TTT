@@ -6,8 +6,8 @@ path = "/home/container/"
 -- AFK X
 -- WIN CONDITIONS X
 -- Lobby X
--- Music and # Ambience
--- Scanner
+-- Music X and Ambience X
+-- Scanner X
 -- Death Note
 -- More Maps
 
@@ -134,6 +134,8 @@ plugin:addHook("PostResetGame",function (reason)
     end
 
     bounds.set(Vector(1656.21,36.61,1352.18), Vector(1807.56,86.26,1415.93))
+
+    phones = {}
 end)
 
 plugin:addHook("PhysicsRigidBodies",function ()
@@ -269,6 +271,18 @@ local function tick()
     allPlayers = players.getAll()
     allHumans = humans.getAll()
     allItems = items.getAll()
+
+    for _,phone in ipairs(phones) do
+        if not phone.parentHuman then
+            phone:remove()
+            break
+        else
+            if not phone.parentHuman.data.hasEquipped and (phone.parentSlot == 0 or phone.parentSlot == 1) then
+                phone.parentHuman.data.hasEquipped = true
+                messagePlayerWrap(phone.parentHuman.player,"Equipped Traitor Walkie")
+            end
+        end
+    end
 
     if lobby then
         for _,ply in ipairs(allPlayers) do
@@ -409,6 +423,12 @@ local function tick()
                     if i <= ttt then
                         hook.run('SelectedPlayer', ply, 3)
                         messagePlayerWrap(ply,"You are a Traitor")
+                        local phone = items.create(itemTypes[enum.item.radio],ply.human.pos:clone(),orientations.n)
+                        if phone then
+                            phone.computerTopLine = 3
+                            table.insert(phones,phone)
+                            ply.human:mountItem(phone,6)
+                        end
                     elseif i == ttt+1 then
                         hook.run('SelectedPlayer', ply, 0)
                         messagePlayerWrap(ply,"You are the Detective")
