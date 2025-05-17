@@ -23,7 +23,7 @@ function playLoop(filepath)
     sLoop = false
 end
 
-local function stopLoop()
+function stopLoop()
     sLoop = true
     Ambience:destroy()
 end

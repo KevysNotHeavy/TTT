@@ -346,16 +346,18 @@ local function tick()
 
             if KeyPressed(human,enum.input.shift) then
                 if not human.data.checkedRole then
-                    if human.player.team == 0 then
-                        messagePlayerWrap(human.player,"Detective")
-                    elseif human.player.team == 2 then
-                        messagePlayerWrap(human.player,"Innocent")
-                    elseif human.player.team == 3 then
-                        messagePlayerWrap(human.player,"Traitor")
-                    else
-                        messagePlayerWrap(human.player,"Unassigned (Grace Period)")
+                    if human.player then
+                        if human.player.team == 0 then
+                            messagePlayerWrap(human.player,"Detective")
+                        elseif human.player.team == 2 then
+                            messagePlayerWrap(human.player,"Innocent")
+                        elseif human.player.team == 3 then
+                            messagePlayerWrap(human.player,"Traitor")
+                        else
+                            messagePlayerWrap(human.player,"Unassigned (Grace Period)")
+                        end
+                        human.data.checkedRole = true
                     end
-                    human.data.checkedRole = true
                 end
             else
                 human.data.checkedRole = false
@@ -409,7 +411,8 @@ local function tick()
                         messagePlayerWrap(ply,"You are a Traitor")
                     elseif i == ttt+1 then
                         hook.run('SelectedPlayer', ply, 0)
-                        messagePlayerWrap(ply,"You are a Detective")
+                        messagePlayerWrap(ply,"You are the Detective")
+                        ply.human:mountItem(Scanner.create(ply.human.pos:clone(),2).item,6)
                     else
                         messagePlayerWrap(ply,"You are Innocent")
                         ply.team = 2

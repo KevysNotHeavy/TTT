@@ -44,10 +44,11 @@ function Scanner:scan()
                 self.scans = self.scans - 1
                 if hum.player.team == 3 then
                     playOnce(path .. "modes/TTT/sounds/negative.pcm",2,false,self.item)
+                    messagePlayerWrap(self.item.parentHuman.player,hum.player.name.." is a Traitor!")
                 else
-                    playOnce(path .. "modes/TTT/sounds/negative.pcm",2,false,self.item)
+                    playOnce(path .. "modes/TTT/sounds/affirmative.pcm",2,false,self.item)
+                    messagePlayerWrap(self.item.parentHuman.player,hum.player.name.." is Innocent!")
                 end
-                chat.announce("hit"..hum.player.name)
             end
         end
     else
