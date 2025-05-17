@@ -18,41 +18,6 @@ path = "/home/container/"
 -- New Bounds system
 -- Red T names
 
-
-local function playOnce(filepath,earshot)
-    local sound = Speaker.create(items[255],earshot)
-    sound:loadAudioFile(filepath)
-    sound:toggle2D()
-    sound:play()
-end
-
-sLoop = false
-
-local function playLoop(filepath)
-    Ambience = Speaker.create(items[255])
-    Ambience.destroyItem = false
-    Ambience:loadAudioFile(filepath)
-    Ambience:toggle2D()
-    Ambience:play()
-    stopLoop = false
-end
-
-local function stopLoop(filepath)
-    sLoop = true
-    Ambience:destroy()
-end
-
-plugin:addHook("Logic",function ()
-    if Ambience then
-        if Ambience.errorFrames > 8 and not sLoop then
-            local tempFile = Ambience.currentPath
-            Ambience:destroy()
-            playLoop(tempFile)
-        end
-    end
-end)
-
-
 local maps = { --Spawns are VecCuboids--
     { --TTT_Apartments
         name = "TTT_Apartments",
@@ -134,35 +99,6 @@ plugin:addHook("BulletHitHuman",function (human, bullet)
     end
 end)
 
-local currConnection = nil
-plugin:addHook("PacketBuilding",function (connection)
-    if allPlayers then
-        if connection == currConnection then
-            return
-        end
-
-        currBuildingConnection = connection
-
-        if connection.player.team == 3 then
-            for _,ply in ipairs(allPlayers) do
-                if ply.team == 3 then
-                    ply.criminalRating = 100
-                end
-            end
-        else
-            for _,ply in ipairs(allPlayers) do
-                ply.criminalRating = 0
-            end
-        end
-
-        for _,ply in ipairs(allPlayers) do
-            if ply.team == 0 then
-                ply.criminalRating = 25
-            end
-        end
-    end
-end)
-
 ---comment
 ---@param unit string
 ---@param time number
@@ -180,6 +116,7 @@ plugin:addHook("PostResetGame",function (reason)
     server.time = 11*60*60+11*60
 
     lobby = true
+    playLoop(path .. "modes/TTT/sounds/lobby.pcm")
     ended = false
 
     timeTillStart = time("s",5)
@@ -200,12 +137,14 @@ plugin:addHook("PostResetGame",function (reason)
 end)
 
 plugin:addHook("PhysicsRigidBodies",function ()
-    if allPlayers and lobby then
+    if allPlayers then
         for _,ply in ipairs(allPlayers) do
             if ply.connection then
-                if not ply.data.moved then
-                    if ply.human then
-                        ply.human:setVelocity(Vector(0,0.0028,0))
+                if lobby then
+                    if not ply.data.moved then
+                        if ply.human then
+                            ply.human:setVelocity(Vector(0,0.0028,0))
+                        end
                     end
                 end
 
@@ -222,8 +161,8 @@ end)
     local function spawnPlayer(ply)
         if not ply.human then
             math.randomseed(os.clock())
-            local randX = (math.random(0,200) - 100) / 50
-            local randZ = (math.random(0,200) - 100) / 50
+            local randX = (math.random(0,200) - 100) / 10
+            local randZ = (math.random(0,200) - 100) / 10
             humans.create(Vector(1735.98+randX,60,1382.62+randZ), eulerAnglesToRotMatrix(0,math.random(0,math.pi*2),0), ply)
         end
     end
@@ -305,11 +244,11 @@ end)
                 ended = true
             elseif ts == 0 then
                 events.createMessage(3,"Innocent Win!",-1,2)
-                playOnce(path .. "modes/TTT/sounds/cWin.pcm",0)
+                playOnce(path .. "modes/TTT/sounds/cWin.pcm",0,true)
                 ended = true
             elseif civs == 0 then
                 events.createMessage(3,"Terrorists Win!",-1,2)
-                playOnce(path .. "modes/TTT/sounds/tWin.pcm",0)
+                playOnce(path .. "modes/TTT/sounds/tWin.pcm",0,true)
                 ended = true
             end
             currTime = server.ticksSinceReset
@@ -334,6 +273,25 @@ local function tick()
     if lobby then
         for _,ply in ipairs(allPlayers) do
             spawnPlayer(ply)
+
+            if not ply.data.welcomed then
+                messagePlayerWrap(ply,"Welcome to TTT!")
+                messagePlayerWrap(ply,"Press R to Ready Up")
+                ply.data.welcomed = true
+            end
+
+            if ply.human then
+                if not ply.isReady and lobby and KeyPressed(ply.human,enum.input.r) then
+                    ply.isReady = true
+                    if ply.human then
+                        ply.human:speak("I'm Ready!",2)
+                    else
+                        messagePlayerWrap(ply,"You Have Readied Up.")
+                    end
+        
+                    events.createMessage(3,string.format("%s is Ready! (%s/%s)",ply.name,readiedPlayers+1,maxPlayers),-1,2)
+                end
+            end
         end
 
         maxPlayers = #allPlayers-2
@@ -348,8 +306,6 @@ local function tick()
                 readiedPlayers = readiedPlayers + 1
             end
         end
-
-        maxPlayers = 1
 
         if readiedPlayers >= maxPlayers then
             timeTillStart = timeTillStart - 1
@@ -370,6 +326,7 @@ local function tick()
 
                     spawnPlayersAndWeapons()
 
+                    stopLoop()
                     playLoop(map.ambience)
                 end
             else
@@ -459,6 +416,8 @@ local function tick()
                     end
                     ply:update()
 
+                    ply:updateElimState(0,ply.team,nil,nil)
+
                     ply.human.isImmortal = false
                 end
 
@@ -496,22 +455,6 @@ end
 
 plugin:addHook("Logic",function () tick() end)
 
-plugin.commands["/ready"] = {
-    info = "Ready Up",
-    call = function (ply)
-        if not ply.isReady then
-            ply.isReady = true
-            if ply.human then
-                ply.human:speak("I'm Ready!",2)
-            else
-                messagePlayerWrap(ply,"You Have Readied Up.")
-            end
-
-            events.createMessage(3,string.format("%s is Ready! (%s/%s)",ply.name,readiedPlayers+1,maxPlayers),-1,2)
-        end
-    end
-}
-
 plugin.commands["/tst"] = {
     canCall = function (player)
         return player.isAdmin
@@ -529,5 +472,17 @@ plugin.commands["/end"] = {
     info = "test sound",
     call = function (player, human, args)
         stopLoop()
+    end
+}
+
+plugin.commands["/scn"] = {
+    canCall = function (player)
+        return player.isAdmin
+    end,
+    info = "test sound",
+    call = function (player, human, args)
+        if human then
+            Scanner.create(human.pos,2)
+        end
     end
 }

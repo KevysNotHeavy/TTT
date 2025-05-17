@@ -1,7 +1,7 @@
 ---@type Plugin
 local mode = ...
 
-mode:require("plugins/run")
+--mode:require("plugins/run")
 mode:require("plugins/noStamina")
 mode:require("plugins/noDamage")
 mode:require("plugins/grab")
@@ -9,7 +9,11 @@ mode:require("plugins/bounds")
 mode:require("plugins/inputCheck")
 mode:require("plugins/afk")
 mode:require("plugins/speaker")
+mode:require("plugins/speakerExtra")
 mode:require("plugins/coloredNames")
+mode:require("plugins/walk")
+mode:require("plugins/scanner")
+
 mode:require("TTT")
 
 mode.name = "TTT"
