@@ -8,8 +8,9 @@ path = "/home/container/"
 -- Lobby X
 -- Music X and Ambience X
 -- Scanner X
--- Death Note
+-- Death Note X
 -- More Maps
+-- Fix foot sounds
 
 -- Changes
 -- More Maps
@@ -70,7 +71,14 @@ local maps = { --Spawns are VecCuboids--
                     { Vector(1700.54,57.09,1584.52), Vector(1715.14,57.08,1603.28) },
                 },
         bounds = {Vector(1780.29,24.88,1692.07), Vector(1625.55,59.47,1577.68)},
-    }
+    },
+
+    {
+        name = "TTT_Construction",
+        ambience = "",
+        spawns = {},
+        bounds = {Vector(1188.25,5.05,1587.31), Vector(1058.35,127.15,1767.01)},
+    },
 }
 
 local map = {}
@@ -181,6 +189,9 @@ end)
             spawnRange = map.spawns[math.random(1,#map.spawns)]
             local spawn = vecRandBetween(spawnRange[1],spawnRange[2])
             local hum = humans.create(spawn, eulerAnglesToRotMatrix(0,math.random(0,math.pi*2),0), ply)
+            colors = {0,1,2,3,4,5,10,11}
+            hum.suitColor = colors[math.random(0,#colors)]
+            hum.lastUpdatedWantedGroup = -1
             hum.isImmortal = true
         end
 
@@ -247,11 +258,11 @@ end)
                 ended = true
             elseif ts == 0 then
                 events.createMessage(3,"Innocent Win!",-1,2)
-                playOnce(path .. "modes/TTT/sounds/cWin.pcm",0,true)
+                playOnce(path .. "modes/TTT/sounds/cWin.pcm",3,true)
                 ended = true
             elseif civs == 0 then
                 events.createMessage(3,"Terrorists Win!",-1,2)
-                playOnce(path .. "modes/TTT/sounds/tWin.pcm",0,true)
+                playOnce(path .. "modes/TTT/sounds/tWin.pcm",3,true)
                 ended = true
             end
             currTime = server.ticksSinceReset
@@ -289,10 +300,14 @@ local function tick()
         for _,ply in ipairs(allPlayers) do
             spawnPlayer(ply)
 
-            if not ply.data.welcomed then
-                messagePlayerWrap(ply,"Welcome to TTT!")
-                messagePlayerWrap(ply,"Press R to Ready Up")
-                ply.data.welcomed = true
+            if not ply.data.welcomed and ply.connection then
+                if events.getCount() > 2 then
+                    if ply.connection:hasReceivedEvent(events[events.getCount()-2]) then
+                        messagePlayerWrap(ply,"Welcome to TTT!")
+                        messagePlayerWrap(ply,"Press R to Ready Up")
+                        ply.data.welcomed = true
+                    end
+                end
             end
 
             if ply.human then
@@ -322,7 +337,7 @@ local function tick()
             end
         end
 
-        if readiedPlayers >= maxPlayers then
+        if readiedPlayers >= maxPlayers or fs then
             timeTillStart = timeTillStart - 1
             if timeTillStart < 60 then
                 server.time = 60
@@ -333,7 +348,7 @@ local function tick()
 
                     --Choose a map to play
                     math.randomseed(os.clock())
-                    map = maps[math.random(1,#maps)]
+                    map = maps[1] --maps[math.random(1,#maps)]
 
                     bounds.set(map.bounds[1],map.bounds[2]) --Set New Bounds
 
@@ -432,6 +447,9 @@ local function tick()
                         end
                     elseif i == ttt+1 then
                         hook.run('SelectedPlayer', ply, 0)
+                        ply.human.suitColor = 1 --black
+                        ply.human.model = 1
+                        ply.human.lastUpdatedWantedGroup = -1
                         messagePlayerWrap(ply,"You are the Detective")
                         ply.human:mountItem(Scanner.create(ply.human.pos:clone(),2).item,6)
                     else
@@ -508,5 +526,26 @@ plugin.commands["/scn"] = {
         if human then
             Scanner.create(human.pos,2)
         end
+    end
+}
+
+plugin.commands["/fs"] = {
+    canCall = function (player)
+        return player.isAdmin
+    end,
+    info = "force start",
+    call = function (player, human, args)
+        fs = true
+        timeTillStart = 0
+    end
+}
+
+plugin.commands["/db"] = {
+    canCall = function (player)
+        return player.isAdmin
+    end,
+    info = "disable bounds",
+    call = function (player, human, args)
+        bounds.remove()
     end
 }

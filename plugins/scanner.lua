@@ -40,13 +40,13 @@ function Scanner:scan()
 
         local hum = physics.lineIntersectAnyQuick(posA,posB,self.item.parentHuman,0,false)
         if hum then
-            if hum.class == "Human" then
+            if hum.class == "Human" and hum.isAlive then
                 self.scans = self.scans - 1
                 if hum.player.team == 3 then
-                    playOnce(path .. "modes/TTT/sounds/negative.pcm",2,false,self.item)
+                    playOnce(path .. "modes/TTT/sounds/negative.pcm",4,false,self.item)
                     messagePlayerWrap(self.item.parentHuman.player,hum.player.name.." is a Traitor!")
                 else
-                    playOnce(path .. "modes/TTT/sounds/affirmative.pcm",2,false,self.item)
+                    playOnce(path .. "modes/TTT/sounds/affirmative.pcm",4,false,self.item)
                     messagePlayerWrap(self.item.parentHuman.player,hum.player.name.." is Innocent!")
                 end
             end
@@ -60,7 +60,7 @@ end
 function tick()
     for _,scanner in ipairs(Scanner.scanners) do
         if scanner.item.parentHuman then
-            if ( KeyPressed(scanner.item.parentHuman,enum.input.lmb) and scanner.item.parentSlot == 0 ) or ( KeyPressed(scanner.item.parentHuman,enum.input.lmb) and KeyPressed(scanner.item.parentHuman,enum.input.shift) and scanner.item.parentSlot == 1 ) then
+            if ( KeyPressed(scanner.item.parentHuman,enum.input.lmb) and not KeyPressed(scanner.item.parentHuman,enum.input.shift) and scanner.item.parentSlot == 0 ) or ( KeyPressed(scanner.item.parentHuman,enum.input.lmb) and KeyPressed(scanner.item.parentHuman,enum.input.shift) and scanner.item.parentSlot == 1 ) then
                 if not scanner.hasScanned then
                     scanner.hasScanned = true
                     scanner:scan()
