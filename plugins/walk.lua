@@ -2,11 +2,23 @@
 local plugin = ...
 
 plugin:addHook("PhysicsRigidBodies",function ()
-    for _,human in pairs(allHumans) do
+    for _,human in pairs(humans.getAll()) do
         if human.player then
 
             local castOffset = 0
             local volume = 100
+
+            if not human.data.timeTillStand then
+                human.data.timeTillStand = 15
+            end
+
+            if human.zoomLevel ~= 1 then
+                human.data.timeTillStand = 15
+            else
+                if human.data.timeTillStand > 0 then
+                    human.data.timeTillStand = human.data.timeTillStand - 1
+                end
+            end
 
             if human.zoomLevel == 0 and not KeyPressed(human,enum.input.ctrl) then
                 castOffset = 0.3
@@ -17,7 +29,7 @@ plugin:addHook("PhysicsRigidBodies",function ()
             elseif human.zoomLevel == 1 and human.player.data.moved then
                 castOffset = 0.1
                 volume = 60
-                if not KeyPressed(human,enum.input.ctrl) and not human.vehicle then
+                if not KeyPressed(human,enum.input.ctrl) and not human.vehicle and human.isStanding and human.data.timeTillStand <= 0 then
                     human.inputFlags = human.inputFlags + 8
                 end
             end

@@ -10,7 +10,6 @@ path = "/home/container/"
 -- Scanner X
 -- Death Note X
 -- More Maps
--- Fix foot sounds
 
 -- Changes
 -- More Maps
@@ -23,7 +22,7 @@ path = "/home/container/"
 local maps = { --Spawns are VecCuboids--
     { --TTT_Apartments
         name = "TTT_Apartments",
-        ambience = path .. "/modes/TTT/sounds/apartmentAmbience.pcm",
+        ambience = path .. "/modes/TTT/sounds/ambience/TTT_Apartments.pcm",
         spawns = {
                     --Far Building
                     { Vector(1709.65,57.08,1655.47), Vector(1662.40,57.09,1652.52) },
@@ -120,12 +119,21 @@ local function time(unit,time)
 end
 
 --####INIT####--
+local startMusic
+local ended
+local timeTillStart
+local timeTillEnd
+local gracePeriod
+local roundTime
+local initTeam
+local phones
+
 plugin:addHook("PostResetGame",function (reason)
     server.state = enum.state.ingame
     server.time = 11*60*60+11*60
 
     lobby = true
-    playLoop(path .. "modes/TTT/sounds/lobby.pcm")
+    startMusic = true
     ended = false
 
     timeTillStart = time("s",5)
@@ -195,7 +203,6 @@ end)
             hum.isImmortal = true
         end
 
-        chat.announce(tostring(math.floor(math.clamp(#allPlayers*3,30,999))))
         for i=1,math.floor(math.clamp(#allPlayers*2.5,20,999)) do
             math.randomseed(os.clock())
             local weapon = math.random(1,100)
@@ -258,11 +265,11 @@ end)
                 ended = true
             elseif ts == 0 then
                 events.createMessage(3,"Innocent Win!",-1,2)
-                playOnce(path .. "modes/TTT/sounds/cWin.pcm",3,true)
+                playOnce(path .. "modes/TTT/sounds/end/cWin.pcm",3,true)
                 ended = true
             elseif civs == 0 then
                 events.createMessage(3,"Terrorists Win!",-1,2)
-                playOnce(path .. "modes/TTT/sounds/tWin.pcm",3,true)
+                playOnce(path .. "modes/TTT/sounds/end/tWin.pcm",3,true)
                 ended = true
             end
             currTime = server.ticksSinceReset
@@ -284,6 +291,11 @@ local function tick()
     allHumans = humans.getAll()
     allItems = items.getAll()
 
+    if startMusic then
+        playLoop(path .. "modes/TTT/sounds/lobby.pcm")
+        startMusic = false
+    end
+
     for _,phone in ipairs(phones) do
         if not phone.parentHuman then
             phone:remove()
@@ -298,6 +310,11 @@ local function tick()
 
     if lobby then
         for _,ply in ipairs(allPlayers) do
+            if not ply.data.initRun then
+                ply.zoomLevel = 0
+                ply.data.initRun = true
+            end
+
             spawnPlayer(ply)
 
             if not ply.data.welcomed and ply.connection then
@@ -495,7 +512,7 @@ local function tick()
     end
 end
 
-plugin:addHook("Logic",function () tick() end)
+plugin:addHook("Logic",function () if players.getCount() > 0 then tick() end end)
 
 plugin.commands["/tst"] = {
     canCall = function (player)
