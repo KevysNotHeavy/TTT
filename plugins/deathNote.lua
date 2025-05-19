@@ -98,6 +98,7 @@ plugin:addHook("Logic",function ()
 
                     note.memoText = string.format(memoText,ply.name,nameSpacing,saying,bullet,human.data.bulletDistance or "N/A",team,human.data.headHP,human.data.leftArmHP,human.data.rightArmHP,human.data.chestHP,human.data.leftLegHP,human.data.rightLegHP)
                     note.parentHuman = humans[255]
+                    note.despawnTime = 60*60*99
                     human.data.deathNote = note
                 end
             else
@@ -107,7 +108,7 @@ plugin:addHook("Logic",function ()
                 local closestPlayer = {ply=nil,dist=math.huge}
 
                 for _,ply in pairs(players.getAll()) do
-                    if ply.connection then
+                    if ply.connection and ply.human then
                         if not physics.lineIntersectLevel(ply.connection.cameraPos,human.data.deathNote.pos,false).hit then
                             if human.data.deathNote.pos:dist(ply.connection.cameraPos) < closestPlayer.dist then
                                 closestPlayer.dist = human.data.deathNote.pos:dist(ply.connection.cameraPos)
