@@ -50,7 +50,7 @@ plugin:addHook("PhysicsRigidBodies",function ()
                     if not leftFoot.data.hit and leftFoot.data.soundCooled <= 0 then
                         events.createSound(enum.sound.weapon.bullet.hit_metal2,leftFoot.pos,0.26*(volume/100),4)
                         leftFoot.data.hit = true
-                        leftFoot.data.soundCooled = 10
+                        leftFoot.data.soundCooled = 5
                     end
                 else
                     leftFoot.data.hit = false
@@ -64,7 +64,7 @@ plugin:addHook("PhysicsRigidBodies",function ()
                     if not rightFoot.data.hit then
                         events.createSound(enum.sound.weapon.bullet.hit_metal2,rightFoot.pos,0.26*(volume/100),4)
                         rightFoot.data.hit = true
-                        rightFoot.data.soundCooled = 10
+                        rightFoot.data.soundCooled = 5
                     end
                 else
                     rightFoot.data.hit = false

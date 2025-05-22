@@ -74,8 +74,18 @@ local maps = { --Spawns are VecCuboids--
 
     {
         name = "TTT_Construction",
-        ambience = "",
-        spawns = {},
+        ambience = path .. "/modes/TTT/sounds/ambience/TTT_Apartments.pcm", --TEMP
+        spawns = {
+                    --Tall
+                    {Vector(1094.14,25.08,1616.5), Vector(1099.44,25.07,1619.4)},
+                    {Vector(1093.32,36.84,1622.81), Vector(1105.88,36.84,1628.16)},
+                    {Vector(1092.28,48.84,1620.71), Vector(1106.59,48.83,1627.84)},
+                 },
+        --weaponSpawns = {}
+        barriers =  {
+                        {Vector(1097.95,37.00,1619.937), eulerAnglesToRotMatrix(0,0,0)},
+                        {Vector(1097.95,38.00,1619.937), eulerAnglesToRotMatrix(0,0,0)},
+                    },
         bounds = {Vector(1188.25,5.05,1587.31), Vector(1058.35,127.15,1767.01)},
     },
 }
@@ -192,6 +202,16 @@ end)
             hum:remove()
         end
 
+        if map.barriers then
+            for _,wall in pairs(map.barriers) do
+                local wall = items.create(itemTypes[enum.item.wall],wall[1],wall[2])
+                wall.despawnTime = 60*60*99
+                wall.hasPhysics = true
+                wall.isStatic = true
+                wall.parentHuman = humans[255]
+            end
+        end
+
         for _,ply in ipairs(allPlayers) do
             math.randomseed(os.clock())
             spawnRange = map.spawns[math.random(1,#map.spawns)]
@@ -224,7 +244,11 @@ end)
                 wep = weapons[4]
             end
 
-            spawnRange = map.spawns[math.random(1,#map.spawns)]
+            local spawnRange
+            if not map.weaponSpawns then
+                spawnRange = map.spawns[math.random(1,#map.spawns)]
+            end
+
             local spawn = vecRandBetween(spawnRange[1],spawnRange[2])
             local gun = items.create(itemTypes[wep.wep],spawn,eulerAnglesToRotMatrix(0,math.random(0,math.pi*2),math.pi/2))
             local mag = items.create(itemTypes[wep.mag],Vector(),orientations.n)
@@ -310,11 +334,6 @@ local function tick()
 
     if lobby then
         for _,ply in ipairs(allPlayers) do
-            if not ply.data.initRun then
-                ply.zoomLevel = 0
-                ply.data.initRun = true
-            end
-
             spawnPlayer(ply)
 
             if not ply.data.welcomed and ply.connection then
@@ -365,7 +384,9 @@ local function tick()
 
                     --Choose a map to play
                     math.randomseed(os.clock())
-                    map = maps[1] --maps[math.random(1,#maps)]
+
+                    -----MAP------
+                    map = maps[2] --maps[math.random(1,#maps)]
 
                     bounds.set(map.bounds[1],map.bounds[2]) --Set New Bounds
 
