@@ -74,14 +74,38 @@ local maps = { --Spawns are VecCuboids--
 
     {
         name = "TTT_Construction",
-        ambience = path .. "/modes/TTT/sounds/ambience/TTT_Apartments.pcm", --TEMP
+        ambience = path .. "/modes/TTT/sounds/ambience/TTT_Construction.pcm", --TEMP
         spawns = {
                     --Tall
-                    {Vector(1094.14,25.08,1616.5), Vector(1099.44,25.07,1619.4)},
-                    {Vector(1093.32,36.84,1622.81), Vector(1105.88,36.84,1628.16)},
-                    {Vector(1092.28,48.84,1620.71), Vector(1106.59,48.83,1627.84)},
+                    { Vector(1094.14,25.08,1616.50), Vector(1099.44,25.07,1619.40) },
+                    { Vector(1093.32,36.84,1622.81), Vector(1105.88,36.84,1628.16) },
+                    { Vector(1092.28,48.84,1620.71), Vector(1106.59,48.83,1627.84) },
+
+                    --Outside
+                    { Vector(1092.85,24.71,1632.37), Vector(1117.40,24.71,1643.23) },
+                    { Vector(1129.75,24.71,1635.04), Vector(1120.59,24.71,1649.66) },
+                    { Vector(1145.14,24.71,1635.05), Vector(1154.73,24.71,1645.21) },
+
+                    --Mini building
+                    { Vector(1116.53,25.08,1624.87), Vector(1131.07,25.08,1631.42) },
+                    
+                    --Across from stairs
+                    { Vector(1159.14,36.84,1630.29), Vector(1138.26,36.84,1617.84) },
                  },
-        --weaponSpawns = {}
+        weaponSpawns = {
+                        { Vector(1112.37,36.69,1622.96), Vector(1135.52,36.78,1621.26) },
+                        { Vector(1135.88,36.77,1618.73), Vector(1112.38,36.77,1617.19) },
+                        { Vector(1147.13,36.83,1631.03), Vector(1136.89,36.82,1628.33) },
+                        { Vector(1156.55,24.82,1659.61), Vector(1159.29,24.83,1663.05) },
+                        { Vector(1117.03,24.68,1646.95), Vector(1095.95,24.70,1656.73) },
+                        { Vector(1099.53,24.83,1664.11), Vector(1092.41,24.85,1671.62) },
+                        { Vector(1110.38,24.83,1627.09), Vector(1106.56,24.83,1624.07) },
+                        { Vector(1090.14,25.18,1618.51), Vector(1093.44,25.08,1619.41) },
+                        { Vector(1108.73,48.83,1618.87), Vector(1103.53,48.84,1624.96) },
+                        { Vector(1148.32,24.84,1625.53), Vector(1159.12,24.83,1616.88) },
+                        { Vector(1121.41,25.08,1630.72), Vector(1117.20,25.08,1625.68) },
+                        { Vector(1134.73,24.84,1660.33), Vector(1131.58,24.82,1663.14) },
+                       },
         barriers =  {
                         {Vector(1097.95,37.00,1619.937), eulerAnglesToRotMatrix(0,0,0)},
                         {Vector(1097.95,38.00,1619.937), eulerAnglesToRotMatrix(0,0,0)},
@@ -247,6 +271,8 @@ end)
             local spawnRange
             if not map.weaponSpawns then
                 spawnRange = map.spawns[math.random(1,#map.spawns)]
+            else
+                spawnRange = map.weaponSpawns[math.random(1,#map.weaponSpawns)]
             end
 
             local spawn = vecRandBetween(spawnRange[1],spawnRange[2])
