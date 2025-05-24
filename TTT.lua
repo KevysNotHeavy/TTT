@@ -412,7 +412,7 @@ local function tick()
                     math.randomseed(os.clock())
 
                     -----MAP------
-                    map = maps[2] --maps[math.random(1,#maps)]
+                    map = maps[math.random(1,#maps)]
 
                     bounds.set(map.bounds[1],map.bounds[2]) --Set New Bounds
 
