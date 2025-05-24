@@ -14,6 +14,7 @@ mode:require("plugins/coloredNames")
 mode:require("plugins/walk")
 mode:require("plugins/scanner")
 mode:require("plugins/deathNote")
+mode:require("plugins/punch")
 
 mode:require("TTT")
 
