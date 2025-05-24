@@ -173,7 +173,7 @@ plugin:addHook("PostResetGame",function (reason)
     timeTillStart = time("s",5)
     timeTillEnd = time("s",5)
 
-    gracePeriod = time("m",2)
+    gracePeriod = time("m",1)
     roundTime = time("m",8)
 
     initTeam = false
@@ -388,8 +388,8 @@ local function tick()
 
         maxPlayers = #allPlayers-2
 
-        if maxPlayers < 3 then
-            maxPlayers = 3
+        if maxPlayers < 5 then
+            maxPlayers = 5
         end
 
         readiedPlayers = 0
@@ -515,7 +515,14 @@ local function tick()
                         ply.human.model = 1
                         ply.human.lastUpdatedWantedGroup = -1
                         messagePlayerWrap(ply,"You are the Detective")
-                        ply.human:mountItem(Scanner.create(ply.human.pos:clone(),2).item,6)
+
+                        if #allPlayers <= 5 then
+                            ply.human:mountItem(Scanner.create(ply.human.pos:clone(),1).item,6)
+                            messagePlayerWrap(ply,"Recieved Scanner: 1 scan")
+                        else
+                            ply.human:mountItem(Scanner.create(ply.human.pos:clone(),2).item,6)
+                            messagePlayerWrap(ply,"Recieved Scanner: 2 scans")
+                        end
                     else
                         messagePlayerWrap(ply,"You are Innocent")
                         ply.team = 2
