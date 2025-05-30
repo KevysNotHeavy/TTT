@@ -1,7 +1,7 @@
 ---@type Plugin
 local plugin = ...
 
-path = "/home/conatiner/"
+local path = "/home/conatiner/"
 
 ---@class Scanner
 ---@field public scans number
@@ -57,7 +57,7 @@ function Scanner:scan()
     end
 end
 
-function tick()
+local function tick()
     for _,scanner in ipairs(Scanner.scanners) do
         if scanner.item.parentHuman then
             if not scanner.item.parentHuman.data.eqScanner and scanner.item.parentSlot == 0 or scanner.item.parentSlot == 1 then
